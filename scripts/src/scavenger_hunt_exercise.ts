@@ -38,32 +38,44 @@ const main = async () => {
    *
    * Create a new Transaction instance from the @mysten/sui/transactions module.
    */
+  const tx = new Transaction();
 
   /**
    * Task 2:
    *
    * Create a new key using the `key::new` function.
    */
+  const key = tx.moveCall({
+    target: `${PACKAGE_ID}::key::new`,
+  });
 
   /**
    * Task 3:
    *
    * Set the key code correctly using the `key::set_code` function.
    */
+  tx.moveCall({
+    target: `${PACKAGE_ID}::key::set_code`,
+    arguments: [key, tx.pure.u64(745223)],
+  });
 
   /**
    * Task 4:
    *
    * Use the key to withdraw the `SUI` coin from the vault using the `vault::withdraw` function.
    */
-  
+  const coin = tx.moveCall({
+    target: `${PACKAGE_ID}::vault::withdraw`,
+    arguments: [tx.object(VAULT_ID), key],
+    typeArguments: ['0x2::sui::SUI'],
+  });
 
   /**
    * Task 5:
    *
    * Transfer the `SUI` coin to your account.
    */
-
+  tx.transferObjects([coin], keypair.toSuiAddress());
 
   /**
    * Task 6:
@@ -75,13 +87,20 @@ const main = async () => {
    * Resources:
    * - Observing transaction results: https://sdk.mystenlabs.com/typescript/transaction-building/basics#observing-the-results-of-a-transaction
    */
+  const result = await suiClient.signAndExecuteTransaction({
+    signer: keypair,
+    transaction: tx,
+  });
 
+  console.log('Vault unlocked and SUI stolen!');
+  console.log('Digest:', result.digest);
+  console.log(`View on explorer: https://suiscan.xyz/testnet/tx/${result.digest}`);
 
   /**
    * Task 7: Run the script with the command below and ensure it works!
-   * 
+   *
    * pnpm scavenger-hunt
-   * 
+   *
    * Verify the transaction on the Sui Explorer: https://suiscan.xyz/testnet/home
    */
 };
